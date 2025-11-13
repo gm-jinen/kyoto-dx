@@ -1,0 +1,47 @@
+<h2>二次医療圏別病床数</h2>
+<div class="control">
+  <label for="secondaryTable-year-select">年度選択:</label>
+  <select id="secondaryTable-year-select" [value]="selectedYear()" (change)="onYearChange($event)">
+    @for (year of availableYears(); track year) {
+    <option [value]="year">
+      {{ year }}
+    </option>
+    }
+  </select>
+  <button class="area-select-button" (click)="clickAreaSelectButton()">エリア選択</button>
+  <div class="area-select" [hidden]="hiddenAreaSelect()">
+  <app-secondary-area-tree-checkbox
+    [selectedYear]="selectedYear()"
+    (availableAreas)="availableAreas.set($event)"
+    (hiddenAreas)="hiddenAreas.set($event)"
+  ></app-secondary-area-tree-checkbox>
+  </div>
+</div>
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        @for(col of filteredColumns; track col) {
+        <th>{{ categoryMap.get(col)?.shortName ?? col }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (area of availableAreas(); track area) {
+      @if (isAreaSelected(area['二次医療圏コード'])) {
+      <tr>
+        @for (col of filteredColumns; track col) {
+        @if (col === '都道府県') {
+        <td>{{ area['都道府県名'] }}</td>
+        } @else if (col === '二次医療圏') {
+        <td>{{ area['二次医療圏名'] }}</td>
+        } @else {
+        <td>{{ getRowData(area, col) }}</td>
+        }
+        }
+      </tr>
+      }
+      }
+    </tbody>
+  </table>
+</div>

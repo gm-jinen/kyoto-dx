@@ -1,0 +1,10 @@
+runtime: nodejs20
+env: standard
+
+# すべて server.js 側で配信。handlers の定義は不要。
+automatic_scaling:
+  max_instances: 2
+
+env_variables:
+  BQ_DATASET: gmjinen
+  BQ_TABLE: csv_data

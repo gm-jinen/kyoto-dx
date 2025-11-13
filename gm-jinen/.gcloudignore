@@ -1,0 +1,13 @@
+# Files to ignore when uploading to Google Cloud
+# Ensure built artifacts are uploaded
+
+# Exclude node modules
+node_modules/
+
+# Exclude common junk
+npm-debug.log
+.DS_Store
+.yarn*
+
+# Include dist explicitly
+!dist/**

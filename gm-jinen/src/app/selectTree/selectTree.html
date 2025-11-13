@@ -1,0 +1,41 @@
+<ul class="select-tree">
+  @if (isRoot()) {
+  <li>
+    <label>
+      <input type="checkbox" (change)="toggleAll()" [checked]="allChecked()"
+        [indeterminate]="someChecked() && !allChecked()" />
+      全て選択・解除
+    </label>
+  </li>
+  }
+  @for (node of nodes(); track $index) {
+  <li>
+    <div class="node-header" [class.has-children]="node.children?.length">
+      <label>
+        <input type="checkbox" (change)="onCheck(node)" [checked]="node.checked || false"
+          [indeterminate]="node.indeterminate || false" />
+        {{ node.name }}
+      </label>
+      @if (node.children?.length) {
+      <button class="toggle-button" (click)="toggleChildren(node)"
+        [attr.aria-label]="(openedParentNode() === node.name ? '折りたたむ' : '展開する') + ': ' + node.name">
+        {{ openedParentNode() === node.name ? '−' : '+' }}
+      </button>
+      }
+    </div>
+    @if (node.children?.length && openedParentNode() === node.name) {
+    <ul>
+      @for (child of node.children; track $index) {
+      <li>
+        <label>
+          <input type="checkbox" (change)="onCheck(child)" [checked]="child.checked || false"
+            [indeterminate]="child.indeterminate || false" />
+          {{ child.name }}
+        </label>
+      </li>
+      }
+    </ul>
+    }
+  </li>
+  }
+</ul>

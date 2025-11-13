@@ -1,0 +1,17 @@
+steps:
+  - name: 'node:22'
+    dir: 'gm-jinen'
+    entrypoint: npm
+    args: ['ci', '--no-audit', '--no-fund']
+
+  - name: 'node:22'
+    dir: 'gm-jinen'
+    entrypoint: npm
+    args: ['run', 'build']
+
+  - name: 'gcr.io/cloud-builders/gcloud'
+    dir: 'gm-jinen'
+    args: ['app','deploy','app.yaml','--quiet','--promote', '--no-cache',] 
+
+options:
+  logging: CLOUD_LOGGING_ONLY

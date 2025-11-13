@@ -1,0 +1,34 @@
+<div class="select-all">
+  <label>
+    <input type="checkbox" [value]="'all'" (change)="selectAreas('all')" [checked]="isAreaSelected('all')"
+      [indeterminate]="indeterminate('all')" />
+    全て選択・解除
+  </label>
+</div>
+@for (pref of availablePrefs(); track pref.code) {
+<div class="pref-group">
+  <div class="pref-header">
+    <label>
+      <input type="checkbox" [value]="pref.code" (change)="selectAreas(pref.code)" [checked]="isAreaSelected(pref.code)"
+        [indeterminate]="indeterminate(pref.code)" />
+      {{ pref.name }}
+    </label>
+    <button class="toggle-button"
+      (click)="togglePrefCodeAccordion(pref.code)"
+      [attr.aria-label]="(openedPrefCodeAccordion() === pref.code ? '折りたたむ' : '展開する') + ': ' + pref.name">
+      {{ openedPrefCodeAccordion() === pref.code ? '−' : '+' }}
+    </button>
+  </div>
+  @if (openedPrefCodeAccordion() === pref.code) {
+  <div class="area-list">
+    @for (area of pref.areas; track area.code) {
+    <label>
+      <input type="checkbox" [value]="area.code" (change)="selectAreas(area.code)"
+        [checked]="isAreaSelected(area.code)" />
+      {{ area.name }}
+    </label>
+    }
+  </div>
+  }
+</div>
+}

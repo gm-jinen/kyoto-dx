@@ -1,0 +1,38 @@
+<h2>都道府県別病床数</h2>
+<div class="control">
+  <label for="table-year-select">年度選択:</label>
+  <select id="table-year-select" [value]="selectedYear()" (change)="onYearChange($event)">
+    @for (year of availableYears(); track year) {
+    <option [value]="year">
+      {{ year }}
+    </option>
+    }
+  </select>
+</div>
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>入院料</th>
+        @for (column of columnDisplayNames; track $index) {
+          <th>{{ column }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @for (i of indexNames; track $index) {
+      <tr>
+        <td>{{ i }}</td>
+        @for (column of columnNames; track $index) {
+          <td>{{ rows().get(column)?.get(i) || 0 }}</td>
+        }
+      </tr>
+      }
+      <tr><td>合計</td>
+        @for (column of columnNames; track $index) {
+          <td>{{ sumRows().get(column) || 0 }}</td>
+        }
+      </tr>
+    </tbody>
+  </table>
+</div>

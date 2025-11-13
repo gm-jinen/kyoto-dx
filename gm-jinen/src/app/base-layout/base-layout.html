@@ -1,0 +1,23 @@
+<header>
+  <button class="hamburger" (click)="toggleNav()">
+    <svg>
+      <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+    </svg>
+  </button>
+  <h1><a routerLink="/" (click)="closeNav()">LOGO</a></h1>
+</header>
+
+@if (isNavOpen) {
+  <div class="side-nav">
+    <nav>
+      @for (p of projects; track p.path) {
+      <a [routerLink]="p.path" (click)="toggleNav()">{{p.name}}</a>
+      }
+    </nav>
+  </div>
+  <div class="overlay" (click)="closeNav()"></div>
+}
+
+<div class="content">
+  <router-outlet></router-outlet>
+</div>

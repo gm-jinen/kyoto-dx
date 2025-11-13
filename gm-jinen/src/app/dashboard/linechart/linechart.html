@@ -1,0 +1,14 @@
+<h2>病床数の推移</h2>
+<div class="control">
+  <label>都道府県:</label>
+  <select [value]="selectedPrefCode()" (change)="onPrefChange($event)">
+    @for (pref of prefMap; track $index) {
+    <option [value]="pref[0]">{{ pref[1] }}</option>
+    }
+  </select>
+  <button class="select-button category" (click)="clickCategorySelectButton()">入院料の選択</button>
+  <div class="select-area category" [hidden]="!hiddenCategorySelect()">
+    <app-select-tree [isRoot]="true" [(nodes)]="categoryTreeData"></app-select-tree>
+  </div>
+</div>
+<canvas baseChart [data]="chartData()" [options]="chartOptions" [type]="chartType"></canvas>

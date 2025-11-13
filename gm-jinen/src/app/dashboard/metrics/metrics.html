@@ -1,0 +1,24 @@
+<div class="control">
+  <label for="metrics-year-select">年度選択:</label>
+  <select id="metrics-year-select" [value]="selectedYear()" (change)="onYearChange($event)">
+    @for (year of availableYears(); track year) {
+    <option [value]="year">
+      {{ year }}
+    </option>
+    }
+  </select>
+</div>
+<div class="cards-row">
+    <div class="card">
+        <h2>総病床数</h2>
+        <p class="number">{{ sumBedCount("総病床数").toLocaleString() }}</p>
+    </div>
+    <div class="card">
+        <h2>ICU病床数</h2>
+        <p class="number">{{ sumBedCount("ICU病床数").toLocaleString() }}</p>
+    </div>
+    <div class="card">
+        <h2>準ICU病床数</h2>
+        <p class="number">{{ sumBedCount("準ICU病床数").toLocaleString() }}</p>
+    </div>
+</div>

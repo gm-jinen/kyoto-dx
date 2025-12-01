@@ -11,6 +11,9 @@ const dist = path.join(__dirname, 'dist', 'gm-jinen', 'browser');
 const bigquery = new BigQuery();
 const DATASET_ID = process.env.BQ_DATASET || 'gmjinen';
 const TABLE_ID = process.env.BQ_TABLE || 'csv_data';
+// ベーシック認証用環境変数
+const BASIC_AUTH_USER = process.env.BASIC_AUTH_USER;
+const BASIC_AUTH_PASSWORD = process.env.BASIC_AUTH_PASSWORD;
 
 // 選択可能なテーブルidのリスト
 // 注意: 機密データを扱う場合、ここにテーブルIDを追加しないこと
@@ -89,6 +92,36 @@ function parseCsv(text) {
 }
 
 // ====== API ======
+function sendBasicAuthChallenge(res) {
+  res.set('WWW-Authenticate', 'Basic realm="Restricted"');
+  return res.status(401).send('Authentication required');
+}
+
+function basicAuth(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header || !header.startsWith('Basic ')) return sendBasicAuthChallenge(res);
+
+  let decoded = '';
+  try {
+    decoded = Buffer.from(header.slice('Basic '.length), 'base64').toString('utf8');
+  } catch (_) {
+    return sendBasicAuthChallenge(res);
+  }
+
+  const separatorIndex = decoded.indexOf(':');
+  if (separatorIndex === -1) return sendBasicAuthChallenge(res);
+
+  const username = decoded.slice(0, separatorIndex);
+  const password = decoded.slice(separatorIndex + 1);
+
+  if (username === BASIC_AUTH_USER && password === BASIC_AUTH_PASSWORD) {
+    return next();
+  }
+  return sendBasicAuthChallenge(res);
+}
+
+app.use(basicAuth);
+
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 app.post('/api/upload', upload.single('file'), async (req, res) => {

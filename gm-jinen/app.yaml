@@ -1,6 +1,6 @@
 runtime: nodejs20
 env: standard
-
+service: kyoto-dx
 # すべて server.js 側で配信。handlers の定義は不要。
 automatic_scaling:
   max_instances: 2
@@ -8,3 +8,5 @@ automatic_scaling:
 env_variables:
   BQ_DATASET: gmjinen
   BQ_TABLE: csv_data
+  # BASIC_AUTH_USER: 
+  # BASIC_AUTH_PASSWORD: 

@@ -1,11 +1,10 @@
-// server.js
-const express = require('express');
-const path = require('path');
-const multer = require('multer');
-const { BigQuery } = require('@google-cloud/bigquery');
+import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
+import multer from 'multer';
+import { BigQuery } from '@google-cloud/bigquery';
 
-const app = express();
-const dist = path.join(__dirname, 'dist', 'gm-jinen', 'browser');
+const FRONTEND_DIR = path.join(__dirname, 'gm-jinen', 'browser');
+const PORT = process.env.PORT || 8080;
 
 // ====== BigQuery 設定 ======
 const bigquery = new BigQuery();
@@ -44,8 +43,8 @@ async function ensureBigQueryTable() {
 }
 
 // CSV 簡易パーサ（RFC完全準拠ではないが一般的なケースを想定）
-function splitCsvLine(line) {
-  const result = [];
+function splitCsvLine(line: string): string[] {
+  const result: string[] = [];
   let cur = '';
   let inQuotes = false;
   for (let i = 0; i < line.length; i++) {
@@ -76,28 +75,32 @@ function splitCsvLine(line) {
   return result;
 }
 
-function parseCsv(text) {
+function parseCsv(text: string): { header: string[]; rows: Array<{ [key: string]: string }> } {
   const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter(l => l.length > 0);
   if (lines.length === 0) return { header: [], rows: [] };
   const header = splitCsvLine(lines[0]);
-  const rows = [];
+  const rows: Array<{ [key: string]: string }> = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = splitCsvLine(lines[i]);
     if (cols.length === 1 && cols[0] === '') continue;
-    const obj = {};
+    const obj: { [key: string]: string } = {};
     for (let j = 0; j < header.length; j++) obj[header[j]] = cols[j] ?? '';
     rows.push(obj);
   }
   return { header, rows };
 }
 
-// ====== API ======
-function sendBasicAuthChallenge(res) {
+// ====== Express サーバー設定 ======
+const app = express();
+app.use(express.json());
+
+// ====== Basic認証 ======
+function sendBasicAuthChallenge(res: Response) {
   res.set('WWW-Authenticate', 'Basic realm="Restricted"');
   return res.status(401).send('Authentication required');
 }
 
-function basicAuth(req, res, next) {
+function basicAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Basic ')) return sendBasicAuthChallenge(res);
 
@@ -153,16 +156,16 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     // 挿入（バッチ）: 部分失敗も集計
     const batchSize = 1000;
     let inserted = 0;
-    const errors = [];
+    const errors: Array<{ message: string; reason: string; row?: any }> = [];
     for (let i = 0; i < prepared.length; i += batchSize) {
       const chunk = prepared.slice(i, i + batchSize);
       try {
         await table.insert(chunk);
         inserted += chunk.length;
-      } catch (e) {
+      } catch (e: any) {
         // PartialFailureError の場合は e.errors に詳細あり
         if (Array.isArray(e?.errors)) {
-          errors.push(...e.errors.map(err => ({ message: err.message, reason: err.reason, row: err.row }))); 
+          errors.push(...e.errors.map((err: { message: string; reason: string; row: any }) => ({ message: err.message, reason: err.reason, row: err.row }))); 
           // 挿入できた分を加算（エラーから成功件数を厳密に推定できないため、ここでは未加算）
         } else {
           errors.push({ message: String(e?.message ?? e), reason: 'unknown' });
@@ -184,7 +187,8 @@ app.get('/api/data', async (req, res) => {
       return res.status(400).json({ error: '無効なテーブルIDです' });
     }
     // limitが無効な値の場合は0件、未指定の場合はDEFAULT_LIMIT、MAX_LIMITを超える場合はMAX_LIMITに制限
-    const rawLimit = parseInt(req.query.limit === undefined ? DEFAULT_LIMIT : req.query.limit, 10);
+    const limitParam = req.query.limit === undefined ? DEFAULT_LIMIT : req.query.limit;
+    const rawLimit = parseInt(String(limitParam), 10);
     const limit = Math.min(Math.max(0, isNaN(rawLimit) ? 0 : rawLimit), MAX_LIMIT);
     if (limit === 0) {
       return res.json({ rows: [] });
@@ -205,7 +209,7 @@ app.get('/api/data', async (req, res) => {
     const [job] = await bigquery.createQueryJob({ query, location: 'asia-northeast1' });
     const [rows] = await job.getQueryResults();
     return res.json({ rows: rows });
-  } catch (err) {
+  } catch (err: any) {
     console.error({
       message: err.message,
       code: err.code,
@@ -237,7 +241,7 @@ app.get('/api/rows', async (req, res) => {
     const [job] = await bigquery.createQueryJob({ query, location: 'asia-northeast1' });
     const [rows] = await job.getQueryResults();
     // row は STRING。サーバ側でJSON.parseし、パース失敗はスキップ
-    const parsed = [];
+    const parsed: any[] = [];
     for (const r of rows) {
       try {
         parsed.push(JSON.parse(r.row));
@@ -253,13 +257,13 @@ app.get('/api/rows', async (req, res) => {
 });
 
 // ====== 静的配信 ======
-app.use(express.static(dist, { maxAge: '1y', immutable: true }));
+app.use(express.static(FRONTEND_DIR, { maxAge: '1y', immutable: true }));
 
 // SPA Fallback (Express 5 対応): /api と拡張子付きを除外し、それ以外を index.html
 app.get(/^(?!\/api)(?!.*\.).*$/, (req, res) => {
   res.set('Cache-Control', 'no-store, max-age=0');
-  res.sendFile(path.join(dist, 'index.html'));
+  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 
-const port = process.env.PORT || 8080;
-app.listen(port, () => console.log(`App listening on ${port}`));
+app.listen(PORT, () => console.log(`App listening on ${PORT}`));
+
